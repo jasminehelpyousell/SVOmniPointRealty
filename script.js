@@ -1,181 +1,239 @@
 /**
- * SV OmniPoint Realty & Lending — Interactive Frontend Script (script.js)
- * Features:
- *  1. Mobile Hamburger Navigation Menu Toggle
- *  2. Dark / Light Mode Theme Switcher (with localStorage persistence)
- *  3. Interactive FAQ Accordion
- *  4. Consultation CTA Modal & Form Submission Alert
+ * SV OmniPoint Realty & Lending - Interactive Features
+ * File: script.js
+ * 
+ * Features Included:
+ * 1. Mobile Hamburger Menu Toggle with ARIA state management
+ * 2. Dark / Light Mode Theme Switcher with localStorage persistence
+ * 3. Interactive FAQ Accordion with smooth toggle & ARIA accessibility
+ * 4. Interactive Consultation Modal & Form Submission Alert
+ * 5. Smooth Scroll & Active Navigation Link Highlighter
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  /* ========================================================================
-     1. Mobile Hamburger Menu Toggle
-     ======================================================================== */
-  const hamburgerBtn = document.getElementById('hamburger-btn');
-  const mainNav = document.getElementById('main-nav');
-  const navLinks = document.querySelectorAll('.nav-link');
+  initThemeSwitcher();
+  initMobileNav();
+  initFaqAccordion();
+  initBookingModal();
+  initScrollSpy();
+});
 
-  if (hamburgerBtn && mainNav) {
-    hamburgerBtn.addEventListener('click', () => {
-      const isExpanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
-      hamburgerBtn.setAttribute('aria-expanded', String(!isExpanded));
-      hamburgerBtn.classList.toggle('active');
-      mainNav.classList.toggle('open');
-    });
+/* ==========================================================================
+   1. Dark / Light Mode Switcher
+   ========================================================================== */
+function initThemeSwitcher() {
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const storedTheme = localStorage.getItem('sv_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    // Close mobile menu when any navigation link is clicked
-    navLinks.forEach((link) => {
-      link.addEventListener('click', () => {
-        hamburgerBtn.setAttribute('aria-expanded', 'false');
-        hamburgerBtn.classList.remove('active');
-        mainNav.classList.remove('open');
-      });
-    });
+  // Set initial theme based on local storage or system preference
+  if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    updateThemeToggleIcon(true);
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    updateThemeToggleIcon(false);
   }
-
-  /* ========================================================================
-     2. Dark / Light Mode Theme Switcher
-     ======================================================================== */
-  const themeToggleBtn = document.getElementById('theme-toggle');
-  const themeIcon = document.getElementById('theme-icon');
-  const rootElement = document.documentElement;
-
-  const applyTheme = (theme) => {
-    rootElement.setAttribute('data-theme', theme);
-    if (themeIcon) {
-      // Sun icon when in dark mode (to switch to light), Crescent moon when in light mode
-      themeIcon.innerHTML = theme === 'dark' ? '&#9728;' : '&#9789;';
-    }
-    try {
-      localStorage.setItem('sv-omnipoint-theme', theme);
-    } catch (e) {
-      // Ignore storage errors in restricted environments
-    }
-  };
-
-  // Load saved theme preference if available
-  let savedTheme = 'light';
-  try {
-    savedTheme = localStorage.getItem('sv-omnipoint-theme') || 'light';
-  } catch (e) {
-    savedTheme = 'light';
-  }
-  applyTheme(savedTheme);
 
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
-      const currentTheme = rootElement.getAttribute('data-theme') || 'light';
-      const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
-      applyTheme(nextTheme);
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const targetTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      document.documentElement.setAttribute('data-theme', targetTheme);
+      localStorage.setItem('sv_theme', targetTheme);
+      updateThemeToggleIcon(targetTheme === 'dark');
     });
   }
+}
 
-  /* ========================================================================
-     3. Interactive FAQ Accordion
-     ======================================================================== */
-  const accordionItems = document.querySelectorAll('.accordion-item');
+function updateThemeToggleIcon(isDark) {
+  const themeIcon = document.getElementById('themeIcon');
+  if (themeIcon) {
+    themeIcon.textContent = isDark ? 'Light' : 'Dark';
+    themeIcon.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+}
 
-  accordionItems.forEach((item) => {
-    const headerBtn = item.querySelector('.accordion-header');
-    const bodyPanel = item.querySelector('.accordion-body');
+/* ==========================================================================
+   2. Mobile Hamburger Menu Toggle
+   ========================================================================== */
+function initMobileNav() {
+  const menuToggle = document.getElementById('mobileMenuToggle');
+  const navMenu = document.getElementById('primaryNav');
 
-    if (headerBtn && bodyPanel) {
-      headerBtn.addEventListener('click', () => {
-        const isCurrentlyOpen = headerBtn.getAttribute('aria-expanded') === 'true';
+  if (!menuToggle || !navMenu) return;
 
-        // Close other open accordion items for a clean layout
-        accordionItems.forEach((otherItem) => {
-          const otherBtn = otherItem.querySelector('.accordion-header');
-          const otherPanel = otherItem.querySelector('.accordion-body');
-          if (otherBtn && otherPanel) {
-            otherBtn.setAttribute('aria-expanded', 'false');
-            otherPanel.hidden = true;
-            otherItem.classList.remove('open');
-          }
-        });
+  menuToggle.addEventListener('click', () => {
+    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+    menuToggle.setAttribute('aria-expanded', String(!isExpanded));
+    navMenu.classList.toggle('nav-open');
+    document.body.classList.toggle('no-scroll', !isExpanded);
+  });
 
-        // Toggle current item
-        if (!isCurrentlyOpen) {
-          headerBtn.setAttribute('aria-expanded', 'true');
-          bodyPanel.hidden = false;
-          item.classList.add('open');
+  // Close nav when clicking on navigation links
+  const navLinks = navMenu.querySelectorAll('a, button');
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      menuToggle.setAttribute('aria-expanded', 'false');
+      navMenu.classList.remove('nav-open');
+      document.body.classList.remove('no-scroll');
+    });
+  });
+}
+
+/* ==========================================================================
+   3. Interactive FAQ Accordion
+   ========================================================================== */
+function initFaqAccordion() {
+  const faqItems = document.querySelectorAll('.faq-item');
+
+  faqItems.forEach(item => {
+    const headerBtn = item.querySelector('.faq-question');
+    const content = item.querySelector('.faq-answer');
+
+    if (!headerBtn || !content) return;
+
+    headerBtn.addEventListener('click', () => {
+      const isOpen = item.classList.contains('active');
+
+      // Close all other accordion items for clean accordion UX
+      faqItems.forEach(otherItem => {
+        if (otherItem !== item) {
+          otherItem.classList.remove('active');
+          const otherBtn = otherItem.querySelector('.faq-question');
+          const otherContent = otherItem.querySelector('.faq-answer');
+          if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+          if (otherContent) otherContent.style.maxHeight = null;
         }
       });
-    }
+
+      // Toggle current item
+      if (isOpen) {
+        item.classList.remove('active');
+        headerBtn.setAttribute('aria-expanded', 'false');
+        content.style.maxHeight = null;
+      } else {
+        item.classList.add('active');
+        headerBtn.setAttribute('aria-expanded', 'true');
+        content.style.maxHeight = content.scrollHeight + 'px';
+      }
+    });
   });
+}
 
-  /* ========================================================================
-     4. Consultation CTA Modal & Form Submission Alert
-     ======================================================================== */
-  const modal = document.getElementById('consultation-modal');
-  const openModalBtns = document.querySelectorAll('.open-modal-btn');
-  const closeModalBtn = document.getElementById('close-modal-btn');
-  const consultationForm = document.getElementById('consultation-form');
-  const formFeedback = document.getElementById('form-feedback');
+/* ==========================================================================
+   4. Consultation Booking Modal & Alert Handling
+   ========================================================================== */
+function initBookingModal() {
+  const modal = document.getElementById('bookingModal');
+  const openButtons = document.querySelectorAll('[data-open-modal="bookingModal"]');
+  const closeButton = document.getElementById('closeModalBtn');
+  const bookingForm = document.getElementById('bookingForm');
 
-  const openModal = () => {
-    if (!modal) return;
-    modal.hidden = false;
+  if (!modal) return;
+
+  window.openBookingModal = () => {
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    const firstInput = modal.querySelector('input');
-    if (firstInput) firstInput.focus();
   };
 
-  const closeModal = () => {
-    if (!modal) return;
-    modal.hidden = true;
+  window.closeBookingModal = () => {
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
-    if (formFeedback) {
-      formFeedback.hidden = true;
-      formFeedback.className = 'form-feedback';
-      formFeedback.textContent = '';
-    }
   };
 
-  openModalBtns.forEach((btn) => {
-    btn.addEventListener('click', openModal);
+  openButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.openBookingModal();
+    });
   });
 
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', closeModal);
+  if (closeButton) {
+    closeButton.addEventListener('click', window.closeBookingModal);
   }
 
-  if (modal) {
-    modal.addEventListener('click', (event) => {
-      if (event.target === modal) {
-        closeModal();
-      }
-    });
-  }
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && modal && !modal.hidden) {
-      closeModal();
+  // Backdrop click closes modal
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      window.closeBookingModal();
     }
   });
 
-  if (consultationForm && formFeedback) {
-    consultationForm.addEventListener('submit', (event) => {
-      event.preventDefault();
+  // ESC key closes modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('active')) {
+      window.closeBookingModal();
+    }
+  });
 
-      const clientName = document.getElementById('client-name')?.value.trim();
-      const clientEmail = document.getElementById('client-email')?.value.trim();
-      const clientPhone = document.getElementById('client-phone')?.value.trim();
-      const serviceInterest = document.getElementById('service-interest')?.value;
+  // Form submission handler with structured feedback
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', (e) => {
+      e.preventDefault();
 
-      if (!clientName || !clientEmail || !clientPhone) {
-        formFeedback.hidden = false;
-        formFeedback.className = 'form-feedback error';
-        formFeedback.textContent = 'Please provide your full name, email address, and phone number so our advisory desk can reach you.';
-        return;
-      }
+      const fullName = document.getElementById('fullName')?.value || 'Client';
+      const serviceType = document.getElementById('serviceType');
+      const selectedService = serviceType ? serviceType.options[serviceType.selectedIndex].text : 'Real Estate & Lending Advisory';
 
-      formFeedback.hidden = false;
-      formFeedback.className = 'form-feedback success';
-      formFeedback.textContent = `Thank you, ${clientName}! Your request for "${serviceInterest}" has been routed to Jasmine Lin's Dual-License Advisory Desk (DRE# 01823608 | NMLS# 321799). We will contact you at ${clientPhone} or ${clientEmail} within 1 business day.`;
+      window.closeBookingModal();
+      bookingForm.reset();
 
-      consultationForm.reset();
+      // Modern notification alert banner
+      showNotification(`Thank you, ${fullName}! Your confidential request for "${selectedService}" has been submitted. Jasmine Lin will contact you within 24 business hours.`);
     });
   }
-});
+}
 
+function showNotification(message) {
+  let toast = document.getElementById('appNotificationToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appNotificationToast';
+    toast.className = 'notification-toast';
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.classList.add('show');
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 5500);
+}
+
+/* ==========================================================================
+   5. Active Section Scroll Spy
+   ========================================================================== */
+function initScrollSpy() {
+  const sections = document.querySelectorAll('section[id], footer[id]');
+  const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+
+  if (!sections.length || !navLinks.length) return;
+
+  const observerOptions = {
+    root: null,
+    rootMargin: '-20% 0px -70% 0px',
+    threshold: 0
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          if (link.getAttribute('href') === `#${id}`) {
+            link.classList.add('active-nav');
+          } else {
+            link.classList.remove('active-nav');
+          }
+        });
+      }
+    });
+  }, observerOptions);
+
+  sections.forEach(section => observer.observe(section));
+}
